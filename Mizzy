@@ -1,0 +1,213 @@
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid")
+local rootPart = character:WaitForChild("HumanoidRootPart")
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "MovementEditor"
+screenGui.ResetOnSpawn = false
+screenGui.Enabled = true
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 520, 0, 420)
+frame.Position = UDim2.new(0.5, -260, 0.5, -210)
+frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- initial red; will animate
+frame.BorderSizePixel = 0
+frame.Draggable = true
+frame.Active = true
+frame.Parent = screenGui
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
+
+local mainTitle = Instance.new("TextLabel")
+mainTitle.Size = UDim2.new(1, 0, 0, 50)
+mainTitle.Text = "Mizzy's Gui"
+mainTitle.Font = Enum.Font.SourceSansBold
+mainTitle.TextSize = 30
+mainTitle.TextColor3 = Color3.new(0, 0, 0)  -- black text
+mainTitle.BackgroundTransparency = 1
+mainTitle.Parent = frame
+
+-- Removed navFrame and bottom buttons completely
+
+-- Container frames for pages
+local pagesFrame = Instance.new("Frame")
+pagesFrame.Size = UDim2.new(1, 0, 1, -60) -- just leave space for title now
+pagesFrame.Position = UDim2.new(0, 0, 0, 60)
+pagesFrame.BackgroundTransparency = 1
+pagesFrame.Parent = frame
+
+local homePage = Instance.new("Frame")
+homePage.Size = UDim2.new(1, 0, 1, 0)
+homePage.Position = UDim2.new(0, 0, 0, 0)
+homePage.BackgroundTransparency = 1
+homePage.Parent = pagesFrame
+homePage.Visible = true
+
+local settingsPage = Instance.new("Frame")
+settingsPage.Size = UDim2.new(1, 0, 1, 0)
+settingsPage.Position = UDim2.new(0, 0, 0, 0)
+settingsPage.BackgroundTransparency = 1
+settingsPage.Parent = pagesFrame
+settingsPage.Visible = false
+
+local function createSectionTitle(parent, pos, text)
+	local title = Instance.new("TextLabel")
+	title.Size = UDim2.new(0.45, -10, 0, 30)
+	title.Position = pos
+	title.Text = text
+	title.Font = Enum.Font.SourceSansBold
+	title.TextSize = 22
+	title.TextColor3 = Color3.new(0, 0, 0)
+	title.BackgroundTransparency = 1
+	title.TextXAlignment = Enum.TextXAlignment.Left
+	title.Parent = parent
+	return title
+end
+
+createSectionTitle(homePage, UDim2.new(0, 280, 0, 10), "Movement Settings")
+createSectionTitle(homePage, UDim2.new(0, 20, 0, 10), "Character Settings")
+
+local function createSlider(frameParent, labelName, pos, maxValue, defaultValue, onChange)
+	local label = Instance.new("TextLabel")
+	label.Text = labelName .. ": " .. defaultValue
+	label.Position = UDim2.new(pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
+	label.Size = UDim2.new(0.45, -10, 0, 20)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.new(0, 0, 0)
+	label.Font = Enum.Font.SourceSans
+	label.TextSize = 18
+	label.TextXAlignment = Enum.TextXAlignment.Left
+	label.Parent = frameParent
+
+	local slider = Instance.new("TextButton")
+	slider.Size = UDim2.new(0.45, -10, 0, 20)
+	slider.Position = UDim2.new(pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset + 25)
+	slider.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+	slider.AutoButtonColor = false
+	slider.Text = ""
+	slider.Parent = frameParent
+	Instance.new("UICorner", slider).CornerRadius = UDim.new(0, 10)
+
+	local fill = Instance.new("Frame", slider)
+	fill.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	fill.Size = UDim2.new(defaultValue / maxValue, 0, 1, 0)
+	fill.BorderSizePixel = 0
+	Instance.new("UICorner", fill).CornerRadius = UDim.new(0, 10)
+
+	local dragging = false
+
+	local function updateSlider(inputX)
+		local rel = (inputX - slider.AbsolutePosition.X) / slider.AbsoluteSize.X
+		rel = math.clamp(rel, 0, 1)
+		fill.Size = UDim2.new(rel, 0, 1, 0)
+		local value = math.floor(rel * maxValue)
+		label.Text = labelName .. ": " .. value
+		onChange(value)
+	end
+
+	slider.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = true
+			updateSlider(input.Position.X)
+		end
+	end)
+
+	slider.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 then
+			dragging = false
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+			updateSlider(input.Position.X)
+		end
+	end)
+
+	return function(val)
+		local rel = val / maxValue
+		fill.Size = UDim2.new(rel, 0, 1, 0)
+		label.Text = labelName .. ": " .. val
+		onChange(val)
+	end
+end
+
+local updateWalk = createSlider(homePage, "Walkspeed", UDim2.new(0, 280, 0, 50), 100, 16, function(val)
+	if humanoid then humanoid.WalkSpeed = val end
+end)
+
+local resetWalk = Instance.new("TextButton")
+resetWalk.Size = UDim2.new(0.45, -10, 0, 30)
+resetWalk.Position = UDim2.new(0, 280, 0, 100)
+resetWalk.Text = "Reset Walkspeed"
+resetWalk.Font = Enum.Font.SourceSans
+resetWalk.TextSize = 18
+resetWalk.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+resetWalk.TextColor3 = Color3.new(0, 0, 0)
+resetWalk.Parent = homePage
+Instance.new("UICorner", resetWalk).CornerRadius = UDim.new(0, 10)
+resetWalk.MouseButton1Click:Connect(function()
+	updateWalk(16)
+end)
+
+local updateJump = createSlider(homePage, "Jump power", UDim2.new(0, 280, 0, 140), 150, 50, function(val)
+	if humanoid then humanoid.JumpPower = val end
+end)
+
+local resetJump = Instance.new("TextButton")
+resetJump.Size = UDim2.new(0.45, -10, 0, 30)
+resetJump.Position = UDim2.new(0, 280, 0, 190)
+resetJump.Text = "Reset Jump Power"
+resetJump.Font = Enum.Font.SourceSans
+resetJump.TextSize = 18
+resetJump.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+resetJump.TextColor3 = Color3.new(0, 0, 0)
+resetJump.Parent = homePage
+Instance.new("UICorner", resetJump).CornerRadius = UDim.new(0, 10)
+resetJump.MouseButton1Click:Connect(function()
+	updateJump(50)
+end)
+
+local spinSpeed = 0
+local spinning = false
+
+local updateSpin = createSlider(homePage, "Spin speed", UDim2.new(0, 20, 0, 50), 100, 0, function(val)
+	spinSpeed = val
+	if spinSpeed > 0 then
+		spinning = true
+	else
+		spinning = false
+	end
+end)
+
+local resetSpin = Instance.new("TextButton")
+resetSpin.Size = UDim2.new(0.45, -10, 0, 30)
+resetSpin.Position = UDim2.new(0, 20, 0, 110)
+resetSpin.Text = "Reset Spin"
+resetSpin.Font = Enum.Font.SourceSans
+resetSpin.TextSize = 18
+resetSpin.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+resetSpin.TextColor3 = Color3.new(0, 0, 0)
+resetSpin.Parent = homePage
+Instance.new("UICorner", resetSpin).CornerRadius = UDim.new(0, 10)
+resetSpin.MouseButton1Click:Connect(function()
+	updateSpin(0)
+end)
+
+RunService.Heartbeat:Connect(function(delta)
+	if spinning and rootPart then
+		rootPart.CFrame = rootPart.CFrame * CFrame.Angles(0, math.rad(spinSpeed), 0)
+	end
+end)
+
+-- Rainbow background color animation
+local hue = 0
+RunService.RenderStepped:Connect(function()
+	hue = (hue + 0.5) % 360
+	frame.BackgroundColor3 = Color3.fromHSV(hue/360, 1, 1)
+end)
