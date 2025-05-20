@@ -10,13 +10,12 @@ local rootPart = character:WaitForChild("HumanoidRootPart")
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "MovementEditor"
 screenGui.ResetOnSpawn = false
-screenGui.Enabled = true
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 520, 0, 420)
-frame.Position = UDim2.new(0.5, -260, 0.5, -210)
-frame.BackgroundColor3 = Color3.fromRGB(255, 0, 0)  -- initial red; will animate
+frame.Size = UDim2.new(0, 520, 0, 460)
+frame.Position = UDim2.new(0.5, -260, 0.5, -230)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 frame.BorderSizePixel = 0
 frame.Draggable = true
 frame.Active = true
@@ -25,18 +24,55 @@ Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 12)
 
 local mainTitle = Instance.new("TextLabel")
 mainTitle.Size = UDim2.new(1, 0, 0, 50)
-mainTitle.Text = "Mizzy's Gui"
-mainTitle.Font = Enum.Font.SourceSansBold
+mainTitle.Text = "Mizzy's GUI"
+mainTitle.Font = Enum.Font.Cartoon
 mainTitle.TextSize = 30
-mainTitle.TextColor3 = Color3.new(0, 0, 0)  -- black text
+mainTitle.TextColor3 = Color3.new(1, 1, 1)
 mainTitle.BackgroundTransparency = 1
 mainTitle.Parent = frame
 
--- Removed navFrame and bottom buttons completely
+-- Minimize GUI
+local minimizeButton = Instance.new("TextButton")
+minimizeButton.Size = UDim2.new(0, 30, 0, 30)
+minimizeButton.Position = UDim2.new(1, -40, 0, 10)
+minimizeButton.Text = "-"
+minimizeButton.Font = Enum.Font.Cartoon
+minimizeButton.TextSize = 20
+minimizeButton.TextColor3 = Color3.new(1, 1, 1)
+minimizeButton.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+minimizeButton.Parent = frame
+Instance.new("UICorner", minimizeButton).CornerRadius = UDim.new(0, 6)
 
--- Container frames for pages
+local minimizedGui = Instance.new("Frame")
+minimizedGui.Size = UDim2.new(0, 60, 0, 60)
+minimizedGui.Position = UDim2.new(1, -70, 1, -70)
+minimizedGui.BackgroundColor3 = Color3.new(0, 0, 0)
+minimizedGui.Visible = false
+minimizedGui.Parent = screenGui
+Instance.new("UICorner", minimizedGui).CornerRadius = UDim.new(0, 10)
+
+local upArrow = Instance.new("TextButton")
+upArrow.Size = UDim2.new(1, 0, 1, 0)
+upArrow.Text = "↑"
+upArrow.Font = Enum.Font.Cartoon
+upArrow.TextSize = 40
+upArrow.TextColor3 = Color3.new(1, 1, 1)
+upArrow.BackgroundTransparency = 1
+upArrow.Parent = minimizedGui
+
+minimizeButton.MouseButton1Click:Connect(function()
+	frame.Visible = false
+	minimizedGui.Visible = true
+end)
+
+upArrow.MouseButton1Click:Connect(function()
+	frame.Visible = true
+	minimizedGui.Visible = false
+end)
+
+-- Pages Frame
 local pagesFrame = Instance.new("Frame")
-pagesFrame.Size = UDim2.new(1, 0, 1, -60) -- just leave space for title now
+pagesFrame.Size = UDim2.new(1, 0, 1, -60)
 pagesFrame.Position = UDim2.new(0, 0, 0, 60)
 pagesFrame.BackgroundTransparency = 1
 pagesFrame.Parent = frame
@@ -48,38 +84,15 @@ homePage.BackgroundTransparency = 1
 homePage.Parent = pagesFrame
 homePage.Visible = true
 
-local settingsPage = Instance.new("Frame")
-settingsPage.Size = UDim2.new(1, 0, 1, 0)
-settingsPage.Position = UDim2.new(0, 0, 0, 0)
-settingsPage.BackgroundTransparency = 1
-settingsPage.Parent = pagesFrame
-settingsPage.Visible = false
-
-local function createSectionTitle(parent, pos, text)
-	local title = Instance.new("TextLabel")
-	title.Size = UDim2.new(0.45, -10, 0, 30)
-	title.Position = pos
-	title.Text = text
-	title.Font = Enum.Font.SourceSansBold
-	title.TextSize = 22
-	title.TextColor3 = Color3.new(0, 0, 0)
-	title.BackgroundTransparency = 1
-	title.TextXAlignment = Enum.TextXAlignment.Left
-	title.Parent = parent
-	return title
-end
-
-createSectionTitle(homePage, UDim2.new(0, 280, 0, 10), "Movement Settings")
-createSectionTitle(homePage, UDim2.new(0, 20, 0, 10), "Character Settings")
-
+-- Create sliders
 local function createSlider(frameParent, labelName, pos, maxValue, defaultValue, onChange)
 	local label = Instance.new("TextLabel")
 	label.Text = labelName .. ": " .. defaultValue
-	label.Position = UDim2.new(pos.X.Scale, pos.X.Offset, pos.Y.Scale, pos.Y.Offset)
+	label.Position = pos
 	label.Size = UDim2.new(0.45, -10, 0, 20)
 	label.BackgroundTransparency = 1
-	label.TextColor3 = Color3.new(0, 0, 0)
-	label.Font = Enum.Font.SourceSans
+	label.TextColor3 = Color3.new(1, 1, 1)
+	label.Font = Enum.Font.Cartoon
 	label.TextSize = 18
 	label.TextXAlignment = Enum.TextXAlignment.Left
 	label.Parent = frameParent
@@ -137,77 +150,145 @@ local function createSlider(frameParent, labelName, pos, maxValue, defaultValue,
 	end
 end
 
-local updateWalk = createSlider(homePage, "Walkspeed", UDim2.new(0, 280, 0, 50), 100, 16, function(val)
+-- Walkspeed
+local updateWalk = createSlider(homePage, "Walkspeed", UDim2.new(0, 280, 0, 10), 100, 16, function(val)
 	if humanoid then humanoid.WalkSpeed = val end
 end)
 
 local resetWalk = Instance.new("TextButton")
 resetWalk.Size = UDim2.new(0.45, -10, 0, 30)
-resetWalk.Position = UDim2.new(0, 280, 0, 100)
+resetWalk.Position = UDim2.new(0, 280, 0, 60)
 resetWalk.Text = "Reset Walkspeed"
-resetWalk.Font = Enum.Font.SourceSans
+resetWalk.Font = Enum.Font.Cartoon
 resetWalk.TextSize = 18
 resetWalk.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-resetWalk.TextColor3 = Color3.new(0, 0, 0)
+resetWalk.TextColor3 = Color3.new(1, 1, 1)
 resetWalk.Parent = homePage
 Instance.new("UICorner", resetWalk).CornerRadius = UDim.new(0, 10)
 resetWalk.MouseButton1Click:Connect(function()
 	updateWalk(16)
 end)
 
-local updateJump = createSlider(homePage, "Jump power", UDim2.new(0, 280, 0, 140), 150, 50, function(val)
+-- Jump Power
+local updateJump = createSlider(homePage, "Jump Power", UDim2.new(0, 280, 0, 100), 150, 50, function(val)
 	if humanoid then humanoid.JumpPower = val end
 end)
 
 local resetJump = Instance.new("TextButton")
 resetJump.Size = UDim2.new(0.45, -10, 0, 30)
-resetJump.Position = UDim2.new(0, 280, 0, 190)
+resetJump.Position = UDim2.new(0, 280, 0, 150)
 resetJump.Text = "Reset Jump Power"
-resetJump.Font = Enum.Font.SourceSans
+resetJump.Font = Enum.Font.Cartoon
 resetJump.TextSize = 18
 resetJump.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-resetJump.TextColor3 = Color3.new(0, 0, 0)
+resetJump.TextColor3 = Color3.new(1, 1, 1)
 resetJump.Parent = homePage
 Instance.new("UICorner", resetJump).CornerRadius = UDim.new(0, 10)
 resetJump.MouseButton1Click:Connect(function()
 	updateJump(50)
 end)
 
+-- Spin
 local spinSpeed = 0
 local spinning = false
-
-local updateSpin = createSlider(homePage, "Spin speed", UDim2.new(0, 20, 0, 50), 100, 0, function(val)
+local updateSpin = createSlider(homePage, "Spin Speed", UDim2.new(0, 20, 0, 10), 100, 0, function(val)
 	spinSpeed = val
-	if spinSpeed > 0 then
-		spinning = true
-	else
-		spinning = false
-	end
+	spinning = val > 0
 end)
 
 local resetSpin = Instance.new("TextButton")
 resetSpin.Size = UDim2.new(0.45, -10, 0, 30)
-resetSpin.Position = UDim2.new(0, 20, 0, 110)
+resetSpin.Position = UDim2.new(0, 20, 0, 60)
 resetSpin.Text = "Reset Spin"
-resetSpin.Font = Enum.Font.SourceSans
+resetSpin.Font = Enum.Font.Cartoon
 resetSpin.TextSize = 18
 resetSpin.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
-resetSpin.TextColor3 = Color3.new(0, 0, 0)
+resetSpin.TextColor3 = Color3.new(1, 1, 1)
 resetSpin.Parent = homePage
 Instance.new("UICorner", resetSpin).CornerRadius = UDim.new(0, 10)
 resetSpin.MouseButton1Click:Connect(function()
 	updateSpin(0)
 end)
 
-RunService.Heartbeat:Connect(function(delta)
+RunService.Heartbeat:Connect(function()
 	if spinning and rootPart then
 		rootPart.CFrame = rootPart.CFrame * CFrame.Angles(0, math.rad(spinSpeed), 0)
 	end
 end)
 
--- Rainbow background color animation
-local hue = 0
-RunService.RenderStepped:Connect(function()
-	hue = (hue + 0.5) % 360
-	frame.BackgroundColor3 = Color3.fromHSV(hue/360, 1, 1)
+-- Infinite Jump
+local infJumpBtn = Instance.new("TextButton")
+infJumpBtn.Size = UDim2.new(0.45, -10, 0, 30)
+infJumpBtn.Position = UDim2.new(0, 20, 0, 110)
+infJumpBtn.Text = "Infinite Jump"
+infJumpBtn.Font = Enum.Font.Cartoon
+infJumpBtn.TextSize = 18
+infJumpBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+infJumpBtn.TextColor3 = Color3.new(1, 1, 1)
+infJumpBtn.Parent = homePage
+Instance.new("UICorner", infJumpBtn).CornerRadius = UDim.new(0, 10)
+
+infJumpBtn.MouseButton1Click:Connect(function()
+	UserInputService.JumpRequest:Connect(function()
+		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+	end)
 end)
+
+-- TP To
+local tpButton = Instance.new("TextButton")
+tpButton.Size = UDim2.new(0.45, -10, 0, 30)
+tpButton.Position = UDim2.new(0, 20, 0, 160)
+tpButton.Text = "TP to"
+tpButton.Font = Enum.Font.Cartoon
+tpButton.TextSize = 18
+tpButton.BackgroundColor3 = Color3.fromRGB(0, 120, 200)
+tpButton.TextColor3 = Color3.new(1, 1, 1)
+tpButton.Parent = homePage
+Instance.new("UICorner", tpButton).CornerRadius = UDim.new(0, 10)
+
+local tpListFrame = Instance.new("ScrollingFrame")
+tpListFrame.Size = UDim2.new(0.45, -10, 0, 120)
+tpListFrame.Position = UDim2.new(0, 20, 0, 200)
+tpListFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+tpListFrame.BorderSizePixel = 0
+tpListFrame.Visible = false
+tpListFrame.CanvasSize = UDim2.new(0, 0, 0, 0)
+tpListFrame.ScrollBarThickness = 6
+tpListFrame.Parent = homePage
+Instance.new("UICorner", tpListFrame).CornerRadius = UDim.new(0, 10)
+
+local function updateTPList()
+	tpListFrame:ClearAllChildren()
+	local y = 0
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if plr ~= player and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") then
+			local btn = Instance.new("TextButton")
+			btn.Size = UDim2.new(1, -10, 0, 30)
+			btn.Position = UDim2.new(0, 5, 0, y)
+			btn.Text = plr.Name
+			btn.Font = Enum.Font.Cartoon
+			btn.TextSize = 16
+			btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+			btn.TextColor3 = Color3.new(1, 1, 1)
+			btn.Parent = tpListFrame
+			Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 8)
+
+			btn.MouseButton1Click:Connect(function()
+				local target = plr.Character and plr.Character:FindFirstChild("HumanoidRootPart")
+				if target then rootPart.CFrame = target.CFrame + Vector3.new(0, 3, 0) end
+			end)
+			y = y + 35
+		end
+	end
+	tpListFrame.CanvasSize = UDim2.new(0, 0, 0, y)
+end
+
+tpButton.MouseButton1Click:Connect(function()
+	tpListFrame.Visible = not tpListFrame.Visible
+	if tpListFrame.Visible then
+		updateTPList()
+	end
+end)
+
+Players.PlayerAdded:Connect(updateTPList)
+Players.PlayerRemoving:Connect(updateTPList)
